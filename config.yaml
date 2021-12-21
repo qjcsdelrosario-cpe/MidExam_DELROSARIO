@@ -1,0 +1,171 @@
+---
+- name: Install ELK, nagios, grafana, prometheus
+  hosts: clients
+  tasks:
+    - name: Install ELK stack
+      include_role:
+        name: elk
+    
+    - name: Install nagios (Ubuntu)
+      include_role:
+        name: nagios-ubuntu
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Install grafana (Ubuntu and CentOS)
+      include_role:
+        name: grafana
+          
+    - name: Install prometheus (Ubuntu)
+      include_role:
+        name: prometheus-ubuntu
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Install prometheus (CentOS)
+      include_role:
+        name: prometheus-centos
+      when: ansible_facts['distribution'] == 'CentOS'
+
+- name: Install influxdb
+  hosts: influxdb
+  tasks:
+    - name: Install packages telegraf for Ubuntu
+      include_role:
+        name: package-ubuntu
+      vars:
+        url: ""
+        repo: ""
+        package: gnupg2
+        service: ""
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Install packages telegraf for Ubuntu
+      include_role:
+        name: package-ubuntu
+      vars:
+        url: ""
+        repo: ""
+        package: software-properties-common
+        service: ""
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Install influxdb for Ubuntu
+      include_role:
+        name: package-ubuntu
+      vars:
+        url: "https:/repos.influxdata.com/influx.key"
+        repo: "deb https://repos.influxdata.com/ubuntu bionic stable"
+        package: influxdb
+        service: influxdb
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Install telegraf for Ubuntu
+      include_role:
+        name: package-ubuntu
+      vars:
+        url: ""
+        repo: ""
+        package: telegraf
+        service: telegraf
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Stop firewall in Ubuntu
+      include_role:
+        name: firewall-ubuntu
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Install influxdb for Centos
+      include_role:
+        name: package-centos
+      vars:
+        src: influxdb.repo-centos
+        dest: /etc/yum.repos.d/influx.repo
+        package: influxdb
+        service: influxdb
+      when: ansible_facts['distribution'] == 'CentOS'
+
+    - name: Install telegraf packages for Centos
+      include_role:
+        name: package-centos
+      vars:
+        src: ""
+        dest: ""
+        package: telegraf
+        service: telegraf
+      when: ansible_facts['distribution'] == 'CentOS'
+
+    - name: Stop firewall for Centos
+      include_role:
+        name: firewall-centos
+
+- name: Install and configure apache2 and httpd
+  hosts: lamp_stack
+  tasks:
+    - name: Install apache for Ubuntu
+      include_role:
+        name: package-ubuntu
+      vars:
+        url: ""
+        repo: ""
+        package:
+          - apache2
+          - php
+          - libapache2-mod-php
+          - php-mysql
+        service: ""
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Install httpd for Centos
+      include_role:
+        name: package-centos
+      vars:
+        package:
+          - httpd
+          - php
+          - php-mysqlnd
+        src: ""
+        dest: ""
+        service: ""
+      when: ansible_facts['distribution'] == 'CentOS'
+
+    - name: Configure Apache2 for Ubuntu
+      include_role:
+        name: conf-apache-ubuntu
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Configure httpd for Centos
+      include_role:
+        name: conf-httpd-centos
+      when: ansible_facts['distribution'] == 'CentOS'
+
+- name: Install MariaDB
+  hosts: lamp_stack
+  tasks:
+    - name: Install mariadb for Ubuntu
+      include_role:
+        name: package-ubuntu
+      vars:
+        url: ""
+        repo: ""
+        package: mariadb-server
+        service: ""
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Install mariadb for Centos
+      include_role:
+        name: package-centos
+      vars:
+        package: mariadb-server
+        src: ""
+        dest: ""
+        service: ""
+      when: ansible_facts['distribution'] == 'CentOS'
+
+    - name: Stop firewall on Ubuntu
+      include_role:
+        name: firewall-ubuntu
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
+    - name: Stop firewall on Centos
+      include_role:
+        name: firewall-centos
+      when: ansible_facts['distribution'] == 'CentOS'
